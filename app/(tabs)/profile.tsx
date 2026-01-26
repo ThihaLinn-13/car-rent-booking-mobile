@@ -1,11 +1,9 @@
-import { Center } from '@/components/ui/center'
-import React from 'react'
-import { Text } from 'react-native'
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function profile() {
   return (
-    <Center className='flex-1'>
-        <Text>Profile Page</Text>
-    </Center>
-  )
+    <>
+      <SafeAreaView></SafeAreaView>
+    </>
+  );
 }
