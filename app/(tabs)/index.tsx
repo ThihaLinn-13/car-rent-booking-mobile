@@ -1,12 +1,15 @@
 import { Box } from "@/components/ui/box";
+import { Center } from "@/components/ui/center";
 import { Text } from "@/components/ui/text";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 export default function Index() {
+
+  const insets = useSafeAreaInsets();
   return (
-    <SafeAreaView className="flex-1">
-      <Box className="bg-slate-600 flex-1">
-        <Text>Index Page</Text>
+      <Box className=" flex-1" style={{paddingTop:insets.top}}>
+        <Center className=" flex-1">
+          <Text>Home Page</Text>
+        </Center>
       </Box>
-    </SafeAreaView>
   );
 }

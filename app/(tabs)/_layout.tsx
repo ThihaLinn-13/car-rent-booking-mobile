@@ -1,5 +1,7 @@
 import { Colors } from "@/constant/Color";
+import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+
 import { Tabs } from "expo-router";
 import { useColorScheme } from "react-native";
 
@@ -14,7 +16,12 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors[theme].tabInactive,
         tabBarStyle: {
           backgroundColor: Colors[theme].tabBg,
+           borderTopWidth: 0, 
+            elevation: 8,  
+            
         },
+
+        
       }}
     >
       <Tabs.Screen
@@ -58,8 +65,7 @@ export default function TabLayout() {
           headerShown: false,
 
           tabBarIcon: ({ color }) => (
-            <FontAwesome size={24} name="user-circle-o" color={color} />
-          ),
+            <Entypo name="user" size={24} color={color} />),
         }}
       />
     </Tabs>
