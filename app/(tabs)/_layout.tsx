@@ -3,6 +3,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 
 import { Tabs } from "expo-router";
+import React from "react";
 import { useColorScheme } from "react-native";
 
 export default function TabLayout() {

@@ -1,6 +1,7 @@
 import { Box } from "@/components/ui/box";
 import { Center } from "@/components/ui/center";
 import { Text } from "@/components/ui/text";
+import React from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 
