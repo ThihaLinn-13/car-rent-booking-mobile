@@ -1,83 +1,39 @@
+import { Box } from '@/components/ui/box';
+import { Button, ButtonText } from '@/components/ui/button';
+import { supabase } from '@/lib/superbase';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import React, { useEffect } from 'react';
+export default function SignIn() {
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: '89266728671-a31o1op9rc7nle7q08hac815kuqmq1m7.apps.googleusercontent.com', 
+    });
+  }, []);
 
-import * as SecureStore from 'expo-secure-store';
-import React, { useState } from 'react';
-
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
-
-async function save(key:any, value:any) {
-  await SecureStore.setItemAsync(key, value);
-}
-
-async function getValueFor(key:any) {
-  let result = await SecureStore.getItemAsync(key);
-  if (result) {
-    alert("🔐 Here's your value 🔐 \n" + result);
-  } else {
-    alert('No values stored under that key.');
-  }
-}
-
-export default function SingIn() {
-  const [key, onChangeKey] = useState('Your key here');
-  const [value, onChangeValue] = useState('Your value here');
+  const signInWithGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      if (userInfo.data?.idToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: userInfo.data.idToken,
+        });
+        
+        if (error) throw error;
+        console.log("Logged in! Profile created via SQL Trigger.");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.paragraph}>Save an item, and grab it later!</Text>
-      {}
-
-      <TextInput
-        style={styles.textInput}
-        clearTextOnFocus
-        onChangeText={text => onChangeKey(text)}
-        value={key}
-      />
-      <TextInput
-        style={styles.textInput}
-        clearTextOnFocus
-        onChangeText={text => onChangeValue(text)}
-        value={value}
-      />
-      {}
-      <Button
-        title="Save this key/value pair"
-        onPress={() => {
-          save(key, value);
-          onChangeKey('Your key here');
-          onChangeValue('Your value here');
-        }}
-      />
-      <Text style={styles.paragraph}>🔐 Enter your key 🔐</Text>
-      <TextInput
-        style={styles.textInput}
-        onSubmitEditing={event => {
-          getValueFor(event.nativeEvent.text);
-        }}
-        placeholder="Enter the key for the value you want to get"
-      />
-    </View>
+    <Box className="flex-1 justify-center p-4">
+      <Button onPress={signInWithGoogle}>
+        <ButtonText>Continue with Google</ButtonText>
+      </Button>
+    </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingTop: 10,
-    backgroundColor: '#ecf0f1',
-    padding: 8,
-  },
-  paragraph: {
-    marginTop: 34,
-    margin: 24,
-    fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  textInput: {
-    height: 35,
-    borderColor: 'gray',
-    borderWidth: 0.5,
-    padding: 4,
-  },
-});
