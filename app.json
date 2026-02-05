@@ -60,9 +60,7 @@
         }
       ],
       "expo-sqlite",
-      "@react-native-google-signin/google-signin",
-      "expo-apple-authentication",
-      "react-native-maps"
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,
