@@ -1,39 +1,133 @@
-import { Box } from '@/components/ui/box';
-import { Button, ButtonText } from '@/components/ui/button';
-import { supabase } from '@/lib/superbase';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import React, { useEffect } from 'react';
+import { GoogleIcon } from "@/components/custom/icons/GoogleIcon";
+import { Box } from "@/components/ui/box";
+import { Divider } from "@/components/ui/divider";
+import {
+  Text
+} from "@/components/ui/text";
+import { VStack } from "@/components/ui/vstack";
+import { webClientId } from "@/config/config";
+import { useAuth } from "@/hooks/use-auth-store";
+import { saveUser } from "@/lib/secureStore";
+import { supabase } from "@/lib/superbase";
+import AntDesign from '@expo/vector-icons/AntDesign';
+import {
+  GoogleSignin,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Alert, Pressable } from "react-native";
+
 export default function SignIn() {
+  const [isLoading, setIsLoading] = useState(false);
+  const { user, setUser } = useAuth();
+
+  const router = useRouter();
+
   useEffect(() => {
     GoogleSignin.configure({
-      webClientId: '89266728671-a31o1op9rc7nle7q08hac815kuqmq1m7.apps.googleusercontent.com', 
+      webClientId:
+        webClientId,
+      offlineAccess: true,
     });
   }, []);
 
   const signInWithGoogle = async () => {
+    setIsLoading(true);
     try {
       await GoogleSignin.hasPlayServices();
+      await GoogleSignin.signOut();
       const userInfo = await GoogleSignin.signIn();
-      
+
+      console.log(userInfo)
+
+
       if (userInfo.data?.idToken) {
         const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
+          provider: "google",
           token: userInfo.data.idToken,
         });
-        
+
         if (error) throw error;
-        console.log("Logged in! Profile created via SQL Trigger.");
+
+        await saveUser(data.user);
+
+        setUser(data.user as any);
+        router.replace('/(tabs)');
+
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
+        Alert.alert("Login Error", error.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithApple = async () => {
+    setIsLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (credential.identityToken) {
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+        });
+
+        if (error) throw error;
+
+        await saveUser(data.user);
+        setUser(data.user as any);
+        router.replace('/(tabs)');
+      }
+    } catch (e: any) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        Alert.alert("Apple Login Error", e.message);
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Box className="flex-1 justify-center p-4">
-      <Button onPress={signInWithGoogle}>
-        <ButtonText>Continue with Google</ButtonText>
-      </Button>
-    </Box>
+    <VStack space="sm" className="flex-1 justify-end p-10 bg-slate-100">
+      <Pressable
+        onPress={signInWithGoogle}
+        disabled={isLoading}
+        className="border border-gray-200 rounded-3xl h-16 bg-white shadow-md overflow-hidden flex justify-around items-center flex-row px-10"
+      >
+
+        <Box className="w-6 h-6  ">
+          <GoogleIcon />
+        </Box>
+        <Text className="text-gray-800 font-semibold text-lg">
+          Continue with Google
+        </Text>
+      </Pressable>
+
+      <Box className="px-2">
+        <Divider className=" bg-gray-200 px-5" />
+      </Box>
+      <Pressable
+        onPress={signInWithApple}
+        disabled={isLoading}
+        className="border border-gray-200 rounded-3xl h-16 bg-black shadow-md overflow-hidden flex justify-around items-center flex-row px-10"
+      >
+        <Box className="w-6 h-6 ">
+          <AntDesign name="apple" size={21} color="white" />
+        </Box>
+        <Text className="text-white font-semibold text-lg">Continue with Apple</Text>
+      </Pressable>
+    </VStack>
   );
 }
+
+

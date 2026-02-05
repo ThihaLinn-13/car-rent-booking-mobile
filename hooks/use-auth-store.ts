@@ -1,16 +1,22 @@
-import { Session } from "@supabase/supabase-js";
+import { removeData } from "@/lib/secureStore";
+import { GoogleUser } from "@/types/auth";
 import { create } from "zustand";
 
-export type AuthData = {
-  session?: Session | undefined;
-  profile?: any | null;
-  isLoading: boolean;
-  isLoggedIn: boolean;
-};
+interface AuthState {
+  user: GoogleUser | null;
+  setUser: (user: GoogleUser) => Promise<void>;
+  logout: () => Promise<void>;
+}
 
-const useAuth = create<AuthData>(() => ({
-  session: undefined,
-  profile: undefined,
-  isLoading: true,
-  isLoggedIn: false,
+export const useAuth = create<AuthState>((set) => ({
+  user: null,
+
+  setUser: async (user) => {
+    set({ user });
+  },
+
+  logout: async () => {
+    await removeData("userData");
+    set({ user: null });
+  },
 }));

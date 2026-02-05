@@ -9,7 +9,7 @@ export default function Activity() {
   const insets = useSafeAreaInsets();
 
   return (
-    <Box className=" flex-1" style={{ paddingTop: insets.top }}>
+    <Box className=" flex-1 bg-slate-100" style={{ paddingTop: insets.top }}>
       <Center className=" flex-1">
         <Text>Activity Page</Text>
       </Center>
