@@ -1,6 +1,6 @@
 import "@/global.css";
-import { useAuth } from "@/hooks/use-auth-store";
 import { getData } from "@/lib/secureStore";
+import { useAuth } from "@/store/use-auth-store";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";

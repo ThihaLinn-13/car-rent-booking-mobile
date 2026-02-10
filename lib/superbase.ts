@@ -5,7 +5,7 @@ import "expo-sqlite/localStorage/install";
 
 import "react-native-url-polyfill/auto";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const superbase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorage,
     autoRefreshToken: true,

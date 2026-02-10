@@ -6,9 +6,9 @@ import {
 } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { webClientId } from "@/config/config";
-import { useAuth } from "@/hooks/use-auth-store";
 import { saveUser } from "@/lib/secureStore";
-import { supabase } from "@/lib/superbase";
+import { superbase } from "@/lib/superbase";
+import { useAuth } from "@/store/use-auth-store";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {
   GoogleSignin,
@@ -40,11 +40,8 @@ export default function SignIn() {
       await GoogleSignin.signOut();
       const userInfo = await GoogleSignin.signIn();
 
-      console.log(userInfo)
-
-
       if (userInfo.data?.idToken) {
-        const { data, error } = await supabase.auth.signInWithIdToken({
+        const { data, error } = await superbase.auth.signInWithIdToken({
           provider: "google",
           token: userInfo.data.idToken,
         });
@@ -60,6 +57,9 @@ export default function SignIn() {
     } catch (error: any) {
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert("Login Error", error.message);
+        console.log("Google Sign-In Error:", error.message);
+        console.log("Error Code:", error.code);
+        console.log("Error Details:", error.details);
       }
     } finally {
       setIsLoading(false);
@@ -77,7 +77,7 @@ export default function SignIn() {
       });
 
       if (credential.identityToken) {
-        const { data, error } = await supabase.auth.signInWithIdToken({
+        const { data, error } = await superbase.auth.signInWithIdToken({
           provider: 'apple',
           token: credential.identityToken,
         });

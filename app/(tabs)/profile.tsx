@@ -3,7 +3,7 @@ import { Box } from "@/components/ui/box";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
-import { useAuth } from "@/hooks/use-auth-store";
+import { useAuth } from "@/store/use-auth-store";
 import React from "react";
 
 export default function Profile() {
