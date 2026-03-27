@@ -4,11 +4,13 @@ import { Button, ButtonText } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
 import { VStack } from "@/components/ui/vstack";
 import { useAuth } from "@/store/use-auth-store";
+import { useRouter } from "expo-router";
 import React from "react";
 
 export default function Profile() {
 
   const { user, logout } = useAuth()
+  const router = useRouter();
 
 
   return (
@@ -43,6 +45,12 @@ export default function Profile() {
           className="bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-2xl w-full  shadow-md"
         >
           <ButtonText className="text-white font-semibold">Logout</ButtonText>
+        </Button>
+
+        <Button onPress={() => {
+         router.navigate('/(tabs)/profile/management')
+        }}>
+          <ButtonText className="text-gray-500 font-medium">Management</ButtonText>
         </Button>
 
       </VStack>

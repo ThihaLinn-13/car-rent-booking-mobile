@@ -1,6 +1,6 @@
-import { getCarCategories } from "@/api/car_category_api";
-import { getCarModels } from "@/api/car_model_api";
-import { Avatar, AvatarFallbackText } from "@/components/ui/avatar";
+import { getCars } from "@/api/car_api";
+import { getCarBrands } from "@/api/car_brand";
+import { Avatar, AvatarFallbackText, AvatarImage } from "@/components/ui/avatar";
 import { Box } from "@/components/ui/box";
 import { Heading } from "@/components/ui/heading";
 import { HStack } from "@/components/ui/hstack";
@@ -22,6 +22,7 @@ const DATA = [
   { id: 2, img: require("@/assets/banner/car_banner_image_2.jpg") },
   { id: 3, img: require("@/assets/banner/car_banner_image_3.jpg") },
   { id: 4, img: require("@/assets/banner/car_banner_image_4.jpg") },
+  { id: 5, img: require("@/assets/banner/banner_1.jpg") },
 ];
 
 export default function Index() {
@@ -35,10 +36,10 @@ export default function Index() {
   } = useCarState();
 
   const getCarBrand = async (size: number) => {
-    if (isLoadingForCarCategory) return;
+    if (isLoadingForCarCategory || !hasNextForCarCategory) return;
 
     setCarCategoryIsLoading(true);
-    const response = await getCarCategories(pageForCarCategory, size);
+    const response = await getCarBrands(pageForCarCategory, size);
 
     if (response && response.data) {
       if (pageForCarCategory === 0) {
@@ -53,12 +54,12 @@ export default function Index() {
     setCarCategoryIsLoading(false);
   };
 
-  const getCars = async (size: number) => {
-    if (isLoadingForCar) return;
+  const getCar = async (size: number) => {
+    if (isLoadingForCar || !hasNextForCar) return;
 
     setCarIsLoading(true);
 
-    const response = await getCarModels(pageForCar, size);
+    const response = await getCars(pageForCar, size);
 
     if (response && response.data) {
       if (pageForCar === 0) {
@@ -76,7 +77,7 @@ export default function Index() {
 
   useEffect(() => {
     getCarBrand(5);
-    getCars(4);
+    getCar(5);
   }, []);
 
   return (
@@ -84,129 +85,130 @@ export default function Index() {
       className="flex-1  bg-white"
       style={{ paddingTop: insets.top }}
     >
-      <VStack space="3xl" className="flex-1 px-5">
-        <Box className="h-1/4  w-full ">
-          <Carousel
-            loop
-            autoPlay={true}
-            autoPlayInterval={3000}
-            width={screenWidth}
-            data={DATA}
-            scrollAnimationDuration={1000}
-            mode="vertical-stack"
-            modeConfig={{
-              stackInterval: 18,
-              scaleInterval: 0.08,
-              showLength: 3,
-            }}
-            renderItem={({ item }) => (
-              <Box className="flex-1 items-center overflow-hidden">
-                <Image
-                  source={item.img}
-                  alt="carousel"
-                  className="w-full h-full"
-                  resizeMode="cover"
-                />
-              </Box>
-            )}
-          />
-        </Box>
+      <>
+        <VStack space="3xl" className="flex-1 px-3">
+          <Box className="h-1/4  w-full overflow-hidden ">
+            <Carousel
+              loop
+              autoPlay={true}
+              autoPlayInterval={3000}
+              width={screenWidth}
+              data={DATA}
+              scrollAnimationDuration={1000}
+              mode="parallax"
 
-        <Box className="">
-          <Heading size="sm" className="mb-2">Brand</Heading>
+              modeConfig={{
+                parallaxScrollingScale: 1,
+                parallaxScrollingOffset: 50,
+              }}
+              renderItem={({ item }) => (
+                <Box className="flex-1 items-center overflow-hidden rounded-sm">
+                  <Image
+                    source={item.img}
+                    alt="carousel"
+                    className="w-full h-full"
+                    resizeMode="cover"
+                  />
+                </Box>
+              )}
+            />
+          </Box>
 
-          <FlashList
-            data={carCategories}
-            horizontal={true}
-            ItemSeparatorComponent={() => <Box className="w-5" />}
-            estimatedItemSize={50}
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id.toString()}
-            onEndReachedThreshold={0.2}
-            onEndReached={() => {
-              if (!isLoadingForCarCategory && hasNextForCarCategory) {
-                getCarBrand(5);
-              }
-            }}
-            renderItem={({ item }) => (
-              <Box
-                className="items-center justify-center "
-              >
-                <Avatar size="lg" className="mb-2 bg-blue-600">
-                  {/* <AvatarImage
-                    source={{ uri: `https://ui-avatars.com/api/?name=${item.name}&background=random&size=128` }}
-                    alt={item.name}
-                  /> */}
-
-                  <AvatarFallbackText className="text-white">
-                    {item.name}
-                  </AvatarFallbackText>
-                </Avatar>
-
-                <Text numberOfLines={1} className="text-slate-900 font-medium text-sm text-center">
-                  {item.name}
-                </Text>
-              </Box>
-            )}
-          />
-        </Box>
-
-        <Box className="flex-1">
-          <Heading size="md" className="mb-2">Available Vehicles</Heading>
-
-          <FlashList
-            data={cars}
-            numColumns={2}
-            contentContainerStyle={{ paddingBottom: 40 }}
-            estimatedItemSize={250}
-            onEndReachedThreshold={0.2}
-            onEndReached={() => {
-              if (!isLoadingForCar && hasNextForCar) {
-                getCars(4);
-              }
-            }}
-            renderItem={({ item }) => (
-              <Box className="flex-1 px-1.5 mb-3">
-                <VStack
-                  className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden"
-                  style={{ elevation: 2 }}
+          <Box className="">
+            <HStack className="just" >
+              <Heading size="sm" className="mb-2">Brand</Heading>
+              <Text>see all</Text>
+            </HStack>
+            <FlashList
+              data={carCategories}
+              horizontal={true}
+              ItemSeparatorComponent={() => <Box className="w-5" />}
+              estimatedItemSize={50}
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.name}
+              onEndReachedThreshold={0.2}
+              onEndReached={() => {
+                if (!isLoadingForCarCategory && hasNextForCarCategory) {
+                  getCarBrand(5);
+                }
+              }}
+              renderItem={({ item }) => (
+                <Box
+                  className="items-center justify-center "
                 >
-                  <Box className="h-32 w-full bg-slate-50 relative">
-                    <Image
-                      source={{ uri: item.car_photo }}
-                      alt={item.car_name}
-                      className="w-full h-full"
-                      resizeMode="cover"
-                    />
-                    
-                  </Box>
+                  <Avatar size="lg" className="mb-2 ">
+                    {item.imageUrl ? (
+                      <AvatarImage source={{ uri: item.imageUrl }} />
+                    ) : (
+                      <AvatarFallbackText className="text-white">
+                        {item.name}
+                      </AvatarFallbackText>
+                    )}
+                  </Avatar>
+                  <Text numberOfLines={1} className="text-slate-900 font-medium text-sm text-center">
+                    {item.name}
+                  </Text>
+                </Box>
+              )}
+            />
+          </Box>
 
-                  <VStack className="p-3" space="xs">
-                    <Text numberOfLines={1} className="text-slate-800 font-semibold text-sm ">
-                      {item.car_name}
-                    </Text>
+          <Box className="flex-1">
+            <Heading size="sm" className="mb-2">Available Vehicles</Heading>
 
-                    <Text className="text-slate-400 text-[10px] font-mono mb-1">
-                     {item.car_number}
-                    </Text>
+            <FlashList
+              data={cars}
+              numColumns={2}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              estimatedItemSize={250}
+              onEndReachedThreshold={0.2}
+              onEndReached={() => {
+                if (!isLoadingForCar && hasNextForCar) {
+                  getCars(4);
+                }
+              }}
+              renderItem={({ item }) => (
+                <Box className="flex-1 px-1.5 mb-3">
+                  <VStack
+                    className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden"
+                    style={{ elevation: 2 }}
+                  >
+                    <Box className="h-32 w-full bg-slate-50 relative">
 
-                    <HStack className="items-center justify-between">
-                      <HStack className="items-baseline">
-                        <Text className=" text-gray-800 font-bold text-sm ">
-                          ${item.rent_price_per_day}
-                        </Text>
-                        <Text className=" ml-0.5">/d</Text>
+                      <Image
+                        source={item.imageUrl}
+                        alt="carousel"
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+
+                    </Box>
+
+                    <VStack className="p-3" space="xs">
+                      <Text numberOfLines={1} className="text-slate-800 font-semibold text-sm ">
+                        {item.name}
+                      </Text>
+
+                      <Text className="text-slate-400 text-[10px] font-mono mb-1">
+                        {item.carNumber}
+                      </Text>
+
+                      <HStack className="items-center justify-between">
+                        <HStack className="items-baseline">
+                          <Text className=" text-gray-800 font-bold text-sm ">
+                            ${item.price}
+                          </Text>
+                          <Text className=" ml-0.5">/d</Text>
+                        </HStack>
                       </HStack>
-
-                     
-                    </HStack>
+                    </VStack>
                   </VStack>
-                </VStack>
-              </Box>
-            )}
-          />
-        </Box>
-      </VStack>
+                </Box>
+              )}
+            />
+          </Box>
+        </VStack>
+      </>
     </Box>
   );
 }

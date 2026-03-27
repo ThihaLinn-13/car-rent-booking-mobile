@@ -14,7 +14,7 @@ interface CarState {
 
 export const useCarState = create<CarState>((set) => ({
   isLoading: false,
-  hasNext: false,
+  hasNext: true,
   page: 0,
   cars: [],
   setCars: (cars: Car[]) => {

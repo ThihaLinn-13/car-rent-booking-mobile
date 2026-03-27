@@ -61,7 +61,8 @@
       ],
       "expo-sqlite",
       "expo-apple-authentication",
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

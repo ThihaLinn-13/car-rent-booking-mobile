@@ -57,9 +57,6 @@ export default function SignIn() {
     } catch (error: any) {
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert("Login Error", error.message);
-        console.log("Google Sign-In Error:", error.message);
-        console.log("Error Code:", error.code);
-        console.log("Error Details:", error.details);
       }
     } finally {
       setIsLoading(false);

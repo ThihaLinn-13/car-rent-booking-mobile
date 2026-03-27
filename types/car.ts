@@ -1,7 +1,16 @@
 export type Car = {
-  car_name: string;
-  car_number: string;
-  rent_price_per_day: string;
-  is_available: boolean;
-  car_photo: string;
+  id: string;
+  name: string;
+  carNumber: string;
+
+  price: string;
+  imageUrl: string;
+};
+
+export type CreateCar = {
+  name: string;
+  imageUrl: string;
+  carNumber: string;
+  brandId: string;
+  price: number;
 };

@@ -1,23 +1,23 @@
-import { CarCategory } from "@/types/carCategory";
+import { CarBrand } from "@/types/carBrand";
 import { create } from "zustand";
 
-interface CarCategoryState {
+interface CarBrandState {
   isLoading: boolean;
   hasNext: boolean;
   page: number;
-  carCategories: CarCategory[];
-  setCarCategories: (carCategories: CarCategory[]) => void;
+  carCategories: CarBrand[];
+  setCarCategories: (carCategories: CarBrand[]) => void;
   setHasNext: (hasNext: boolean) => void;
   setPage: (page: number) => void;
   setIsLoading: (isLoading: boolean) => void;
 }
 
-export const useCarCateogryStore = create<CarCategoryState>((set) => ({
+export const useCarCateogryStore = create<CarBrandState>((set) => ({
   isLoading: false,
-  hasNext: false,
+  hasNext: true,
   page: 0,
   carCategories: [],
-  setCarCategories: (carCategories: CarCategory[]) => {
+  setCarCategories: (carCategories: CarBrand[]) => {
     set({ carCategories: carCategories });
   },
   setHasNext: (hasNext: boolean) => {

@@ -1,35 +1,33 @@
 import "@/global.css";
 import { getData } from "@/lib/secureStore";
 import { useAuth } from "@/store/use-auth-store";
+import { config } from "@gluestack-ui/config";
+
+import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { useColorScheme } from "react-native";
 
-
 export default function RootLayout() {
   const theme = useColorScheme() ?? "light";
-
-  const {user,setUser} = useAuth();
+  const { user, setUser } = useAuth();
 
   async function loadUser() {
-    const savedUser = await getData("userData")
+    const savedUser = await getData("userData");
     if (savedUser) {
-      const userDataWithJsonFormat = JSON.parse(savedUser)
+      const userDataWithJsonFormat = JSON.parse(savedUser);
       setUser(userDataWithJsonFormat);
     }
   }
 
   useEffect(() => {
-
     loadUser();
-  });
-
+  }, []);
 
   return (
-    <>
-      <StatusBar style={theme === 'light' ? 'dark' : 'light'}></StatusBar>
-
+    <GluestackUIProvider config={config} colorMode={theme}>
+      <StatusBar style={theme === 'light' ? 'dark' : 'light'} />
       <Stack>
         <Stack.Protected guard={user ? false : true}>
           <Stack.Screen name="signin" options={{ headerShown: false }} />
@@ -38,6 +36,6 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack.Protected>
       </Stack>
-    </>
+    </GluestackUIProvider>
   );
 }
