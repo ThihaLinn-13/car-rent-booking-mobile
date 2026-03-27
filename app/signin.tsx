@@ -55,6 +55,7 @@ export default function SignIn() {
 
       }
     } catch (error: any) {
+      console.log("Full Error Object:", JSON.stringify(error, null, 2)); // Add this
       if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
         Alert.alert("Login Error", error.message);
       }

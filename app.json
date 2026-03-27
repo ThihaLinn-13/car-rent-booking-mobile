@@ -46,6 +46,12 @@
           "faceIDPermission": "Allow this app to access your Face ID biometric data."
         }
       ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow this app to use your location."
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
