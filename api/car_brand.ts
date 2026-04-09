@@ -16,8 +16,8 @@ export const getCarBrands = async (
     .order("created_at", { ascending: false });
 
   if (error) {
-    alert(error.message);
-    return { data: [], hasNext: false };
+    console.error("Error fetching car brands:", error.message);
+    throw new Error(error.message);
   }
 
 

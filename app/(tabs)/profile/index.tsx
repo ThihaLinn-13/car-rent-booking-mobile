@@ -21,9 +21,9 @@ export default function Profile() {
       >
        
         <Avatar size="xl" className=" overflow-hidden translate-y-3/4 ">
-          <AvatarFallbackText>{user?.user_metadata.full_name}</AvatarFallbackText>
+          <AvatarFallbackText>{user?.name}</AvatarFallbackText>
           <AvatarImage
-            source={{ uri: user?.user_metadata.picture }}
+            source={{ uri: user?.img_url }}
           />
         </Avatar>
       </Box>
@@ -32,10 +32,10 @@ export default function Profile() {
 
         <VStack space="sm" className="items-center">
           <Text className="text-2xl font-semibold text-gray-800">
-            {user?.user_metadata.full_name}
+            {user?.name}
           </Text>
           <Text className="text-gray-500 font-medium">
-            {user?.user_metadata.email}
+            {user?.email}
           </Text>
         </VStack>
 

@@ -1,17 +1,15 @@
 import { getCars } from "@/api/car_api";
 import { getCarBrands } from "@/api/car_brand";
+import TopBar from "@/components/custom/ui/TopBar";
 import { Avatar, AvatarFallbackText, AvatarImage } from "@/components/ui/avatar";
-import { Box } from "@/components/ui/box";
-import { Heading } from "@/components/ui/heading";
-import { HStack } from "@/components/ui/hstack";
 import { Image } from "@/components/ui/image";
-import { Text } from "@/components/ui/text";
-import { VStack } from "@/components/ui/vstack";
+import { Colors } from "@/constant/Color";
+import { useBookingStore } from "@/store/booking-store";
 import { useCarCateogryStore } from "@/store/use-car-category-store";
 import { useCarState } from "@/store/user-car-store";
-import { FlashList } from "@shopify/flash-list";
-import React, { useEffect } from "react";
-import { Dimensions } from "react-native";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Dimensions, FlatList, Pressable, ScrollView, Text, useColorScheme, View } from "react-native";
 import Carousel from "react-native-reanimated-carousel";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,190 +23,217 @@ const DATA = [
   { id: 5, img: require("@/assets/banner/banner_1.jpg") },
 ];
 
-export default function Index() {
+export default function Home() {
   const insets = useSafeAreaInsets();
-  const { carCategories, setCarCategories,
+  const [activeSlide, setActiveSlide] = useState(0);
+  const theme = useColorScheme() ?? "light";
+
+  const {
+    carCategories, setCarCategories,
     isLoading: isLoadingForCarCategory, hasNext: hasNextForCarCategory, page: pageForCarCategory,
-    setPage: setCarCategoryPage, setHasNext: setCarCategoryHasNext, setIsLoading: setCarCategoryIsLoading } = useCarCateogryStore();
-  const { cars, setCars,
+    setPage: setCarCategoryPage, setHasNext: setCarCategoryHasNext, setIsLoading: setCarCategoryIsLoading,
+  } = useCarCateogryStore();
+
+  const {
+    cars, setCars,
     hasNext: hasNextForCar, page: pageForCar, isLoading: isLoadingForCar,
-    setPage: setCarPage, setHasNext: setCarHasNext, setIsLoading: setCarIsLoading
+    setPage: setCarPage, setHasNext: setCarHasNext, setIsLoading: setCarIsLoading,
   } = useCarState();
+
+  const { setSelectedCardId } = useBookingStore();
+  const router = useRouter();
 
   const getCarBrand = async (size: number) => {
     if (isLoadingForCarCategory || !hasNextForCarCategory) return;
-
     setCarCategoryIsLoading(true);
-    const response = await getCarBrands(pageForCarCategory, size);
-
-    if (response && response.data) {
-      if (pageForCarCategory === 0) {
-        setCarCategories(response.data);
-      } else {
-        setCarCategories([...carCategories, ...response.data]);
+    try {
+      const response = await getCarBrands(pageForCarCategory, size);
+      if (response?.data) {
+        setCarCategories(pageForCarCategory === 0 ? response.data : [...carCategories, ...response.data]);
+        setCarCategoryHasNext(response.hasNext);
+        setCarCategoryPage(pageForCarCategory + 1);
       }
-
-      setCarCategoryHasNext(response.hasNext);
-      setCarCategoryPage(pageForCarCategory + 1);
+    } catch (error) {
+      console.error('Failed to fetch car brands:', error);
+    } finally {
+      setCarCategoryIsLoading(false);
     }
-    setCarCategoryIsLoading(false);
   };
 
   const getCar = async (size: number) => {
     if (isLoadingForCar || !hasNextForCar) return;
-
     setCarIsLoading(true);
-
-    const response = await getCars(pageForCar, size);
-
-    if (response && response.data) {
-      if (pageForCar === 0) {
-        setCars(response.data);
-      } else {
-        setCars([...cars, ...response.data]);
+    try {
+      const response = await getCars(pageForCar, size);
+      if (response?.data) {
+        setCars(pageForCar === 0 ? response.data : [...cars, ...response.data]);
+        setCarHasNext(response.hasNext);
+        setCarPage(pageForCar + 1);
       }
-
-      setCarHasNext(response.hasNext);
-      setCarPage(pageForCar + 1);
+    } catch (error) {
+      console.error('Failed to fetch cars:', error);
+    } finally {
+      setCarIsLoading(false);
     }
-    setCarIsLoading(false);
-
-  }
+  };
 
   useEffect(() => {
     getCarBrand(5);
     getCar(5);
   }, []);
 
+  const isDark = theme === "dark";
+
   return (
-    <Box
-      className="flex-1  bg-white"
+    <ScrollView
+      className="flex-1 bg-slate-50 dark:bg-zinc-900"
       style={{ paddingTop: insets.top }}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 50 }}
     >
-      <>
-        <VStack space="3xl" className="flex-1 px-3">
-          <Box className="h-1/4  w-full overflow-hidden ">
-            <Carousel
-              loop
-              autoPlay={true}
-              autoPlayInterval={3000}
-              width={screenWidth}
-              data={DATA}
-              scrollAnimationDuration={1000}
-              mode="parallax"
+      {/* Top bar */}
+      <TopBar />
 
-              modeConfig={{
-                parallaxScrollingScale: 1,
-                parallaxScrollingOffset: 50,
+      {/* Banner carousel */}
+      <View className="mb-6">
+        <Carousel
+          loop
+          autoPlay
+          autoPlayInterval={3500}
+          width={screenWidth}
+          height={190}
+          data={DATA}
+          scrollAnimationDuration={800}
+          onSnapToItem={(index) => setActiveSlide(index)}
+          renderItem={({ item }) => (
+            <View className="px-4">
+              <View
+                className="rounded-3xl overflow-hidden"
+                style={{ height: 190, elevation: 6, shadowColor: '#1e40af', shadowOpacity: 0.25, shadowRadius: 12 }}
+              >
+                <Image source={item.img} alt="banner" className="w-full h-full" resizeMode="cover" />
+                <View className="absolute inset-0" style={{ backgroundColor: 'rgba(15,23,42,0.2)' }} />
+              </View>
+            </View>
+          )}
+        />
+        {/* Dot indicators */}
+        <View className="flex-row justify-center mt-3" style={{ gap: 6 }}>
+          {DATA.map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: i === activeSlide ? 22 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: i === activeSlide ? Colors[theme].tabActive : '#cbd5e1',
               }}
-              renderItem={({ item }) => (
-                <Box className="flex-1 items-center overflow-hidden rounded-sm">
-                  <Image
-                    source={item.img}
-                    alt="carousel"
-                    className="w-full h-full"
-                    resizeMode="cover"
-                  />
-                </Box>
-              )}
             />
-          </Box>
+          ))}
+        </View>
+      </View>
 
-          <Box className="">
-            <HStack className="just" >
-              <Heading size="sm" className="mb-2">Brand</Heading>
-              <Text>see all</Text>
-            </HStack>
-            <FlashList
-              data={carCategories}
-              horizontal={true}
-              ItemSeparatorComponent={() => <Box className="w-5" />}
-              estimatedItemSize={50}
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.name}
-              onEndReachedThreshold={0.2}
-              onEndReached={() => {
-                if (!isLoadingForCarCategory && hasNextForCarCategory) {
-                  getCarBrand(5);
-                }
+      {/* Brands */}
+      <View className="mb-6 px-4">
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-base font-bold text-slate-800 dark:text-white">Brand</Text>
+          <Pressable onPress={() => router.push('/brands')}>
+            <Text className="text-sm font-medium text-slate-800 dark:text-white">view all</Text>
+          </Pressable>
+        </View>
+        <FlatList
+          data={carCategories}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item) => item.name}
+          ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+          onEndReachedThreshold={0.2}
+          onEndReached={() => { if (!isLoadingForCarCategory && hasNextForCarCategory) getCarBrand(5); }}
+          renderItem={({ item }) => (
+            <Pressable className="items-center" style={{ width: 64 }}>
+              <View
+                className="mb-2 rounded-2xl overflow-hidden items-center justify-center"
+                style={{
+                  width: 56, height: 56,
+                  backgroundColor: isDark ? '#27272a' : '#f1f5f9',
+                }}
+              >
+                <Avatar size="lg">
+                  {item.imageUrl
+                    ? <AvatarImage source={{ uri: item.imageUrl }} />
+                    : <AvatarFallbackText className="text-white">{item.name}</AvatarFallbackText>
+                  }
+                </Avatar>
+              </View>
+              <Text numberOfLines={1} className="text-slate-600 dark:text-zinc-300 text-xs font-medium text-center">
+                {item.name}
+              </Text>
+            </Pressable>
+          )}
+        />
+      </View>
+
+      {/* Vehicles */}
+      <View className="pl-4">
+        <View className="flex-row items-center justify-between mb-3 pr-4">
+          <Text className="text-base font-bold text-slate-800 dark:text-white">Available Cars</Text>
+          <Pressable onPress={() => router.push('/cars')}>
+            <Text className="text-sm font-medium text-slate-800 dark:text-white">view all</Text>
+          </Pressable>
+        </View>
+        <FlatList
+          data={cars}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          key="vehicles-horizontal"
+          keyExtractor={(item) => item.id}
+          ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+          contentContainerStyle={{ paddingRight: 32, paddingBottom: 4 }}
+          onEndReachedThreshold={0.2}
+          onEndReached={() => { if (!isLoadingForCar && hasNextForCar) getCar(4); }}
+          renderItem={({ item }) => (
+            <Pressable
+              onPress={() => {
+                router.push(`/vehicle/${item.id}`);
+                setSelectedCardId(item);
               }}
-              renderItem={({ item }) => (
-                <Box
-                  className="items-center justify-center "
-                >
-                  <Avatar size="lg" className="mb-2 ">
-                    {item.imageUrl ? (
-                      <AvatarImage source={{ uri: item.imageUrl }} />
-                    ) : (
-                      <AvatarFallbackText className="text-white">
-                        {item.name}
-                      </AvatarFallbackText>
-                    )}
-                  </Avatar>
-                  <Text numberOfLines={1} className="text-slate-900 font-medium text-sm text-center">
+            >
+              <View
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  width: screenWidth * 0.72,
+                  backgroundColor: isDark ? '#27272a' : '#ffffff',
+                  elevation: 3,
+                  shadowColor: '#000',
+                  shadowOpacity: 0.08,
+                  shadowRadius: 8,
+                }}
+              >
+                {/* Image */}
+                <View style={{ height: 160, backgroundColor: isDark ? '#3f3f46' : '#f1f5f9' }}>
+                  <Image source={item.imageUrl} alt={item.name} className="w-full h-full" resizeMode="cover" />
+                  {/* Price badge */}
+                  <View
+                    className="absolute top-2 right-2 rounded-xl px-2 py-1"
+                    style={{ backgroundColor: Colors[theme].tabActive }}
+                  >
+                    <Text className="text-white text-xs font-bold">${item.price}/d</Text>
+                  </View>
+                </View>
+                {/* Info */}
+                <View className="px-3 py-2.5">
+                  <Text numberOfLines={1} className="text-slate-800 dark:text-white font-semibold text-sm mb-0.5">
                     {item.name}
                   </Text>
-                </Box>
-              )}
-            />
-          </Box>
-
-          <Box className="flex-1">
-            <Heading size="sm" className="mb-2">Available Vehicles</Heading>
-
-            <FlashList
-              data={cars}
-              numColumns={2}
-              contentContainerStyle={{ paddingBottom: 40 }}
-              estimatedItemSize={250}
-              onEndReachedThreshold={0.2}
-              onEndReached={() => {
-                if (!isLoadingForCar && hasNextForCar) {
-                  getCars(4);
-                }
-              }}
-              renderItem={({ item }) => (
-                <Box className="flex-1 px-1.5 mb-3">
-                  <VStack
-                    className="bg-white rounded-md border border-slate-100 shadow-sm overflow-hidden"
-                    style={{ elevation: 2 }}
-                  >
-                    <Box className="h-32 w-full bg-slate-50 relative">
-
-                      <Image
-                        source={item.imageUrl}
-                        alt="carousel"
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
-
-                    </Box>
-
-                    <VStack className="p-3" space="xs">
-                      <Text numberOfLines={1} className="text-slate-800 font-semibold text-sm ">
-                        {item.name}
-                      </Text>
-
-                      <Text className="text-slate-400 text-[10px] font-mono mb-1">
-                        {item.carNumber}
-                      </Text>
-
-                      <HStack className="items-center justify-between">
-                        <HStack className="items-baseline">
-                          <Text className=" text-gray-800 font-bold text-sm ">
-                            ${item.price}
-                          </Text>
-                          <Text className=" ml-0.5">/d</Text>
-                        </HStack>
-                      </HStack>
-                    </VStack>
-                  </VStack>
-                </Box>
-              )}
-            />
-          </Box>
-        </VStack>
-      </>
-    </Box>
+                  <Text className="text-slate-400 dark:text-zinc-400 text-[10px] font-mono">
+                    {item.carNumber}
+                  </Text>
+                </View>
+              </View>
+            </Pressable>
+          )}
+        />
+      </View>
+    </ScrollView>
   );
 }

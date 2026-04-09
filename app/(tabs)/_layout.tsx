@@ -17,12 +17,12 @@ export default function TabLayout() {
         tabBarInactiveTintColor: Colors[theme].tabInactive,
         tabBarStyle: {
           backgroundColor: Colors[theme].tabBg,
-           borderTopWidth: 0, 
-            elevation: 8,  
-            
+          borderTopWidth: 0,
+          elevation: 8,
+
         },
 
-        
+
       }}
     >
       <Tabs.Screen
@@ -69,6 +69,24 @@ export default function TabLayout() {
             <Entypo name="user" size={24} color={color} />),
         }}
       />
+      <Tabs.Screen
+        name="vehicle/[id]"
+        options={{
+          href: null,
+          headerShown: false,
+        }} />
+      <Tabs.Screen
+        name="cars"
+        options={{
+          href: null,
+          headerShown: false,
+        }} />
+      <Tabs.Screen
+        name="brands"
+        options={{
+          href: null,
+          headerShown: false,
+        }} />
     </Tabs>
   );
 }

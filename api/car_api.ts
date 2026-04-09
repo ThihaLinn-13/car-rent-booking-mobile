@@ -19,9 +19,8 @@ export const getCars = async (
     .order("created_at", { ascending: false });
 
   if (error) {
-
-    alert(error.message);
-    return { data: [], hasNext: false };
+    console.error("Error fetching cars:", error.message);
+    throw new Error(error.message);
   }
 
   const hasNext = count ? to + 1 < count : false;

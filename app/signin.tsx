@@ -1,3 +1,4 @@
+import { addUser, getUserByEmail } from "@/api/user_api";
 import { GoogleIcon } from "@/components/custom/icons/GoogleIcon";
 import { Box } from "@/components/ui/box";
 import { Divider } from "@/components/ui/divider";
@@ -9,6 +10,7 @@ import { webClientId } from "@/config/config";
 import { saveUser } from "@/lib/secureStore";
 import { superbase } from "@/lib/superbase";
 import { useAuth } from "@/store/use-auth-store";
+import { User } from "@/types/user";
 import AntDesign from '@expo/vector-icons/AntDesign';
 import {
   GoogleSignin,
@@ -48,9 +50,20 @@ export default function SignIn() {
 
         if (error) throw error;
 
-        await saveUser(data.user);
+        let user:User | null = await getUserByEmail(data.user.email!);
+        if (!user) {    
+            await addUser({
+            email: data.user.email!,
+            name: data.user.user_metadata.full_name!,
+            img_url: data.user.user_metadata.avatar_url!,
+          })
+        }
+        user = await getUserByEmail(data.user.email!);
 
-        setUser(data.user as any);
+        await saveUser(user);
+        console.log(user);
+
+        setUser(user);
         router.replace('/(tabs)');
 
       }

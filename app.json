@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "car-rent-booking-mobile",
-    "slug": "car-rent-booking-mobile",
+    "name": "Wheel House",
+    "slug": "wheel-house",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/WheelHouse.png",
     "scheme": "carrentbookingmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
