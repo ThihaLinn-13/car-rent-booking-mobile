@@ -1,70 +1,57 @@
-import { getCarBrands } from "@/api/car_brand";
+import { SkeletonBox } from "@/components/custom/ui/Skeleton";
 import { Avatar, AvatarFallbackText, AvatarImage } from "@/components/ui/avatar";
+import { Box } from "@/components/ui/box";
+import { HStack } from "@/components/ui/hstack";
+import { VStack } from "@/components/ui/vstack";
+import { Colors } from "@/constant/Color";
 import { useCarCateogryStore } from "@/store/use-car-category-store";
 import { CarBrand } from "@/types/carBrand";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  FlatList, Pressable, RefreshControl, Text,
+  useColorScheme, View
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function BrandsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const theme = useColorScheme() ?? "light";
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
-    carCategories, setCarCategories,
-    isLoading, hasNext, page,
-    setPage, setHasNext, setIsLoading,
+    carCategories, getCarBrands,
+    isLoading, hasNext,
   } = useCarCateogryStore();
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchBrands = useCallback(async (reset = false) => {
-    if (!reset && (isLoading || !hasNext)) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const currentPage = reset ? 0 : page;
-      const response = await getCarBrands(currentPage, 20);
-      
-      if (response?.data) {
-        setCarCategories(currentPage === 0 ? response.data : [...carCategories, ...response.data]);
-        setHasNext(response.hasNext);
-        setPage(currentPage + 1);
-      }
-    } catch (err) {
-      setError('Failed to load brands. Please try again.');
-      console.error('Error fetching brands:', err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [isLoading, hasNext, page, carCategories]);
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    setPage(0);
-    setHasNext(true);
-    await fetchBrands(true);
-  }, [fetchBrands]);
-
   useEffect(() => {
-    fetchBrands(true);
+    if (carCategories.length === 0) getCarBrands();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    useCarCateogryStore.setState({ page: 0, hasNext: true, carCategories: [] });
+    await getCarBrands();
+    setRefreshing(false);
+  };
+
+  const renderSkeleton = (_: any, index: number) => (
+    <Box key={`skeleton-brand-${index}`} className="flex-1 m-2">
+      <VStack className="bg-white dark:bg-zinc-800 rounded-2xl items-center py-4 px-2 border border-slate-100 dark:border-zinc-700" space="sm">
+        <SkeletonBox width={64} height={64} borderRadius={32} />
+        <SkeletonBox width={50} height={10} borderRadius={4} />
+      </VStack>
+    </Box>
+  );
 
   const renderItem = ({ item }: { item: CarBrand }) => (
     <Pressable
       className="flex-1 m-2"
       onPress={() => router.push({ pathname: '/cars', params: { brandId: item.id, brandName: item.name } })}
     >
-      <View
-        className="bg-white dark:bg-zinc-800 rounded-2xl items-center py-4 px-2 border border-slate-100 dark:border-zinc-700"
-        style={{ elevation: 2 }}
-      >
-        <Avatar size="xl" className="mb-3">
+      <VStack className="bg-white dark:bg-zinc-800 rounded-2xl items-center py-4 px-2 border border-slate-100 dark:border-zinc-700" space="sm">
+        <Avatar size="xl">
           {item.imageUrl
             ? <AvatarImage source={{ uri: item.imageUrl }} />
             : <AvatarFallbackText className="text-white">{item.name}</AvatarFallbackText>
@@ -73,52 +60,55 @@ export default function BrandsScreen() {
         <Text numberOfLines={1} className="text-slate-800 dark:text-white font-semibold text-sm text-center">
           {item.name}
         </Text>
-      </View>
+      </VStack>
     </Pressable>
   );
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-zinc-900" style={{ paddingTop: insets.top }}>
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-slate-100 dark:border-zinc-800">
-        <Pressable onPress={() => router.back()} className="mr-3">
-          <Text className="text-blue-500 text-base">← Back</Text>
-        </Pressable>
-        <Text className="text-lg font-bold text-slate-800 dark:text-white">All Brands</Text>
-      </View>
 
-      {error && (
-        <View className="mx-4 mt-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
-        </View>
-      )}
+      {/* Header */}
+      <HStack className="px-4 pt-3 pb-3 bg-white dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800 items-center justify-between">
+        <Text className="text-xl font-bold text-slate-800 dark:text-white">
+          Brands
+        </Text>
+        <Text className="text-slate-400 dark:text-zinc-400 text-xs">
+          {carCategories.length} total
+        </Text>
+      </HStack>
 
       <FlatList
-        data={carCategories}
+        data={
+          isLoading && carCategories.length === 0
+            ? Array(9).fill(null)
+            : carCategories
+        }
         numColumns={3}
         key="brands-3col"
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item?.id ?? `skeleton-brand-${index}`}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 8, paddingBottom: 32 }}
         onEndReachedThreshold={0.3}
-        onEndReached={() => fetchBrands()}
+        onEndReached={() => { if (!isLoading && hasNext) getCarBrands(); }}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={['#3b82f6']}
-            tintColor="#3b82f6"
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors[theme].tabActive}
+            colors={[Colors[theme].tabActive]}
           />
         }
         ListEmptyComponent={
           !isLoading ? (
-            <View className="flex-1 items-center justify-center py-20">
-              <Text className="text-4xl mb-2">🏷️</Text>
+            <VStack className="items-center justify-center py-20" space="sm">
+              <Text className="text-4xl">🏷️</Text>
               <Text className="text-slate-400 dark:text-zinc-500 text-sm">No brands found</Text>
-            </View>
+            </VStack>
           ) : null
         }
-        ListFooterComponent={isLoading && !isRefreshing ? <ActivityIndicator className="my-4" color="#3b82f6" /> : null}
-        renderItem={renderItem}
+        renderItem={({ item, index }) =>
+          !item ? renderSkeleton(item, index) : renderItem({ item })
+        }
       />
     </View>
   );

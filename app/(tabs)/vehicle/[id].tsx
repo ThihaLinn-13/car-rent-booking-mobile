@@ -1,3 +1,4 @@
+import { addBooking } from '@/api/booking_api';
 import { Image } from '@/components/ui/image';
 import { Text } from '@/components/ui/text';
 import { useBookingStore } from '@/store/booking-store';
@@ -28,8 +29,7 @@ export default function VehicleDetailScreen() {
         selectedMonth,
         selectedYear,
         selectedStartDate,
-        selectedEndDate,
-        addBooking
+        selectedEndDate
     } = useBookingStore();
 
     useEffect(() => {

@@ -6,33 +6,32 @@ import { create } from "zustand";
 interface BookingState {
   activities: Booking[];
   isLoading: boolean;
-  selectedCar:Car | null;
+  selectedCar: Car | null;
   selectedMonth: number;
   selectedYear: number;
   selectedStartDate: string | null;
   selectedEndDate: string | null;
   bookedDates: Record<string, any>;
+  selectedDates: Record<string, any>;
 
-  setSelectedCardId: (car:Car) => void;
   getBookedDayByMonth: () => Promise<void>;
+  setSelectedCar: (car: Car | null) => void;
   setPeriod: (month: number, year: number) => void;
   setSelectedStartDate: (date: string | null) => void;
   setSelectedEndDate: (date: string | null) => void;
   refreshMarkedDates: () => void;
-  addBooking:(booking:AddBooking) => Promise<number | null>;
+  addBooking: (booking: AddBooking) => Promise<void>;
 }
 
 export const useBookingStore = create<BookingState>((set, get) => ({
   activities: [],
   isLoading: false,
-  selectedCar:null,
   selectedMonth: new Date().getMonth() + 1,
   selectedYear: new Date().getFullYear(),
   bookedDates: {},
   selectedEndDate: null,
   selectedStartDate: null,
-  
-  setSelectedCardId:(car) => set({selectedCar:car}),
+  selectedCar: null,
 
   setSelectedStartDate: (date) => set({ selectedStartDate: date }),
   setSelectedEndDate: (date) => set({ selectedEndDate: date }),
@@ -40,27 +39,24 @@ export const useBookingStore = create<BookingState>((set, get) => ({
   setPeriod: (month, year) => set({ selectedMonth: month, selectedYear: year }),
 
   getBookedDayByMonth: async () => {
-    const { selectedMonth, selectedYear,selectedCar } = get();
+    const { selectedMonth, selectedYear, selectedCar } = get();
     set({ isLoading: true });
 
     try {
+      const result = await getBookedDayByMonth(
+        selectedMonth,
+        selectedYear,
+        selectedCar?.id || "",
+      );
 
-      const result = await getBookedDayByMonth( selectedMonth, selectedYear,selectedCar?.id!);
-
-      
-
-      const marked = result.reduce((acc: any, booking:Booking) => {
-        // mark every day in the booked range with a red dot
-        let curr = new Date(booking.startDate);
-        const last = new Date(booking.endDate);
-        while (curr <= last) {
-          const ds = curr.toISOString().split('T')[0];
-          acc[ds] = { marked: true, dotColor: '#BC3433' };
-          curr.setDate(curr.getDate() + 1);
-        }
+      const marked = result.reduce((acc: any, booking) => {
+        acc[booking.startDate] = {
+          marked: true,
+          dotColor: "#3b82f6",
+          activeOpacity: 0,
+        };
         return acc;
       }, {});
-
 
       set({ activities: result, bookedDates: marked, isLoading: false });
     } catch (error) {
@@ -69,27 +65,16 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     }
   },
   refreshMarkedDates: () => {
-    const state = get();
-    const activities = state.activities;
-    const selectedStartDate = state.selectedStartDate
-    const selectedEndDate = state.selectedEndDate
+    const { activities, selectedStartDate, selectedEndDate } = get();
     const marked: Record<string, any> = {};
 
-    // Mark ALL dates in booked ranges with red dots
     activities.forEach((booking) => {
-      let curr = new Date(booking.startDate);
-      const last = new Date(booking.endDate);
-      while (curr <= last) {
-        const ds = curr.toISOString().split('T')[0];
-        marked[ds] = {
-          marked: true,
-          dotColor: "#BC3433", 
-        };
-        curr.setDate(curr.getDate() + 1);
-      }
+      marked[booking.startDate] = {
+        marked: true,
+        dotColor: "#9CA3AF",
+      };
     });
 
-    // This layer ignores activities and just draws the blue bar
     if (selectedStartDate) {
       marked[selectedStartDate] = {
         ...marked[selectedStartDate],
@@ -123,18 +108,18 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       }
     }
 
-
-
     set({ bookedDates: marked });
   },
-
-  addBooking:async(booking:AddBooking) => {
-    const bookingId = await addBooking(booking);
-    if (bookingId) {
-      // Refresh booked dates after successful booking
-      await get().getBookedDayByMonth();
+  selectedDates: () => {},
+  addBooking: async (booking) => {
+    try {
+      const newId = await addBooking(booking);
+      if (newId) {
+        await get().getBookedDayByMonth();
+      }
+    } catch (error) {
+      console.error("Failed to add booking:", error);
     }
-    return bookingId;
-  }
-
+  },
+  setSelectedCar: (car) => set({ selectedCar: car }),
 }));

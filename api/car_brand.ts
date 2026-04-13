@@ -1,6 +1,7 @@
 import { superbase } from "@/lib/superbase";
 import { CarBrand, CreateCarBrand } from "@/types/carBrand";
 import { ListResult } from "@/types/listResult";
+import { calcHasNext } from "@/util/pagination";
 
 export const getCarBrands = async (
   page: number = 0,
@@ -20,8 +21,7 @@ export const getCarBrands = async (
     throw new Error(error.message);
   }
 
-
-  const hasNext = count ? to + 1 < count : false;
+  const hasNext = count ? calcHasNext(page, size, count) : false;
 
   const result = {
     data: data as unknown as CarBrand[],

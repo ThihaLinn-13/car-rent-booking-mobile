@@ -1,14 +1,21 @@
-import { getCars } from "@/api/car_api";
+import { SkeletonBox } from "@/components/custom/ui/Skeleton";
+import { Box } from "@/components/ui/box";
+import { HStack } from "@/components/ui/hstack";
 import { Image } from "@/components/ui/image";
+import { VStack } from "@/components/ui/vstack";
+import { Colors } from "@/constant/Color";
 import { useBookingStore } from "@/store/booking-store";
-import { useCarState } from "@/store/user-car-store";
-import { Car } from "@/types/car";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { useCarState } from "@/store/use-car-store";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  FlatList, Pressable, RefreshControl, Text,
+  useColorScheme,
+  View
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type OddFilter = "all" | "odd" | "even";
+type PlateFilter = "all" | "odd" | "even";
 
 const isOddPlate = (carNumber: string): boolean => {
   const digits = carNumber.replace(/\D/g, "");
@@ -19,173 +26,163 @@ const isOddPlate = (carNumber: string): boolean => {
 export default function CarsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { brandId, brandName } = useLocalSearchParams<{ brandId?: string; brandName?: string }>();
-  const { setSelectedCardId } = useBookingStore();
+  const theme = useColorScheme() ?? "light";
+  const { setSelectedCar } = useBookingStore();
+  const [filter, setFilter] = useState<PlateFilter>("all");
+  const [refreshing, setRefreshing] = useState(false);
 
-  const {
-    cars, setCars,
-    isLoading, hasNext, page,
-    setPage, setHasNext, setIsLoading,
-  } = useCarState();
-
-  const [filter, setFilter] = useState<OddFilter>("all");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchCars = useCallback(async (reset = false) => {
-    if (!reset && (isLoading || !hasNext)) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const currentPage = reset ? 0 : page;
-      const response = await getCars(currentPage, 20);
-      
-      if (response?.data) {
-        setCars(currentPage === 0 ? response.data : [...cars, ...response.data]);
-        setHasNext(response.hasNext);
-        setPage(currentPage + 1);
-      }
-    } catch (err) {
-      setError('Failed to load cars. Please try again.');
-      console.error('Error fetching cars:', err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [isLoading, hasNext, page, cars]);
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    setPage(0);
-    setHasNext(true);
-    await fetchCars(true);
-  }, [fetchCars]);
+  const { cars, getCars, isLoading, hasNext } = useCarState();
 
   useEffect(() => {
-    fetchCars(true);
+    if (cars.length === 0) getCars();
   }, []);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    useCarState.setState({ page: 0, hasNext: true, cars: [] });
+    await getCars();
+    setRefreshing(false);
+  };
+
   const filteredCars = cars.filter((car) => {
-    // TODO: Add brand filtering when API supports it
-    // if (brandId && car.brandId !== brandId) return false;
-    
     if (filter === "all") return true;
     if (filter === "odd") return isOddPlate(car.carNumber);
     return !isOddPlate(car.carNumber);
   });
 
-  const FilterChip = ({ label, value }: { label: string; value: OddFilter }) => (
+  const FilterChip = ({ label, value }: { label: string; value: PlateFilter }) => (
     <Pressable
       onPress={() => setFilter(value)}
-      className={'px-4 py-1.5 rounded-full mr-2 border ' + (
-        filter === value
+      className={
+        "px-4 py-1.5 rounded-full border " +
+        (filter === value
           ? "bg-blue-500 border-blue-500"
-          : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700"
-      )}
+          : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700")
+      }
     >
-      <Text className={'text-sm font-medium ' + (filter === value ? "text-white" : "text-slate-600 dark:text-zinc-300")}>
+      <Text
+        className={
+          "text-xs font-medium " +
+          (filter === value
+            ? "text-white"
+            : "text-slate-600 dark:text-zinc-300")
+        }
+      >
         {label}
       </Text>
     </Pressable>
   );
 
-  const renderItem = ({ item }: { item: Car }) => (
+  const renderSkeleton = () => (
+    <Box className="bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-700 mx-4 mb-3">
+      <SkeletonBox width="100%" height={180} borderRadius={0} />
+      <VStack className="p-3" space="xs">
+        <SkeletonBox width="70%" height={13} borderRadius={4} />
+        <HStack className="justify-between items-center">
+          <SkeletonBox width="40%" height={10} borderRadius={4} />
+          <SkeletonBox width="25%" height={13} borderRadius={4} />
+        </HStack>
+      </VStack>
+    </Box>
+  );
+
+  const renderItem = ({ item }: { item: any }) => (
     <Pressable
       onPress={() => {
-        setSelectedCardId(item);
-        router.push(`/vehicle/${item.id}` as any);
+        setSelectedCar(item);
+        router.push(`/vehicle/${item.id}`);
       }}
     >
-      <View
-        className="bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-700 flex-row mx-4 mb-3"
-        style={{ elevation: 2 }}
-      >
-        {/* Image */}
-        <View className="w-28 h-24 bg-slate-100 dark:bg-zinc-700 relative">
-          <Image source={item.imageUrl} alt={item.name} className="w-full h-full" resizeMode="cover" />
-          <View
-            className={'absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md ' + (
-              isOddPlate(item.carNumber) ? "bg-orange-500" : "bg-blue-500"
-            )}
-          >
-            <Text className="text-white text-[9px] font-bold">
-              {isOddPlate(item.carNumber) ? "ODD" : "EVEN"}
-            </Text>
-          </View>
-        </View>
+      <Box className="bg-white dark:bg-zinc-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-700 mx-4 mb-3">
+        {/* Full width image */}
+        <Box className="w-full h-44 bg-slate-100 dark:bg-zinc-700">
+          <Image
+            source={{ uri: item.imageUrl }}
+            alt={item.name}
+            className="w-full h-full"
+            resizeMode="cover"
+          />
+        </Box>
+
         {/* Info */}
-        <View className="flex-1 px-3 py-2.5 justify-between">
-          <View>
-            <Text numberOfLines={1} className="text-slate-800 dark:text-white font-semibold text-sm mb-0.5">
+        <HStack className="px-3.5 py-3 justify-between items-center">
+          <VStack className="flex-1 mr-3">
+            <Text
+              numberOfLines={1}
+              className="text-slate-800 dark:text-white font-semibold text-sm"
+            >
               {item.name}
             </Text>
-            <Text className="text-slate-400 dark:text-zinc-400 text-[10px] font-mono">
+            <Text className="text-slate-400 dark:text-zinc-400 text-xs font-mono">
               {item.carNumber}
             </Text>
-          </View>
+          </VStack>
+
           <Text className="text-blue-500 font-bold text-sm">
             ${item.price}
-            <Text className="text-slate-400 dark:text-zinc-400 text-[10px] font-normal"> /day</Text>
+            <Text className="text-slate-400 dark:text-zinc-400 text-[10px] font-normal">
+              {" "}/day
+            </Text>
           </Text>
-        </View>
-      </View>
+        </HStack>
+      </Box>
     </Pressable>
   );
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-zinc-900" style={{ paddingTop: insets.top }}>
+    <View
+      className="flex-1 bg-slate-50 dark:bg-zinc-900"
+      style={{ paddingTop: insets.top }}
+    >
       {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-slate-100 dark:border-zinc-800">
-        <Pressable onPress={() => router.back()} className="mr-3">
-          <Text className="text-blue-500 text-base">← Back</Text>
-        </Pressable>
-        <Text className="text-lg font-bold text-slate-800 dark:text-white flex-1">
-          {brandName ? brandName + ' Cars' : 'All Cars'}
-        </Text>
-        <Text className="text-slate-400 dark:text-zinc-400 text-xs">{filteredCars.length} cars</Text>
-      </View>
-
-      {/* Filter chips */}
-      <View className="flex-row px-4 py-3">
-        <FilterChip label="All" value="all" />
-        <FilterChip label="Odd Plate" value="odd" />
-        <FilterChip label="Even Plate" value="even" />
-      </View>
-
-      {error && (
-        <View className="mx-4 mb-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-          <Text className="text-red-600 dark:text-red-400 text-sm">{error}</Text>
-        </View>
-      )}
+      <VStack className="px-4 pt-3 pb-0 bg-white dark:bg-zinc-900 border-b border-slate-100 dark:border-zinc-800">
+        
+        <HStack className="items-center justify-between pb-3">
+          <HStack space="sm">
+            <FilterChip label="All" value="all" />
+            <FilterChip label="Odd plate" value="odd" />
+            <FilterChip label="Even plate" value="even" />
+          </HStack>
+          <Text className="text-slate-400 dark:text-zinc-400 text-xs">
+            {filteredCars.length} total
+          </Text>
+        </HStack>
+      </VStack>
 
       <FlatList
-        data={filteredCars}
-        numColumns={1}
-        key="cars-1col"
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 32 }}
+        data={
+          isLoading && cars.length === 0
+            ? Array(6).fill(null)
+            : filteredCars
+        }
+        keyExtractor={(item, index) => item?.id ?? `skeleton-car-${index}`}
+        contentContainerStyle={{ paddingTop: 12, paddingBottom: 32 }}
         onEndReachedThreshold={0.3}
-        onEndReached={() => fetchCars()}
+  showsVerticalScrollIndicator={false}
+        onEndReached={() => {
+          if (!isLoading && hasNext) getCars();
+        }}
         refreshControl={
           <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            colors={['#3b82f6']}
-            tintColor="#3b82f6"
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors[theme].tabActive}
+            colors={[Colors[theme].tabActive]}
           />
         }
         ListEmptyComponent={
           !isLoading ? (
-            <View className="flex-1 items-center justify-center py-20">
-              <Text className="text-4xl mb-2">🚗</Text>
-              <Text className="text-slate-400 dark:text-zinc-500 text-sm">No cars found</Text>
-            </View>
+            <VStack className="items-center justify-center py-20" space="sm">
+              <Text className="text-4xl">🚗</Text>
+              <Text className="text-slate-400 dark:text-zinc-500 text-sm">
+                No cars found
+              </Text>
+            </VStack>
           ) : null
         }
-        ListFooterComponent={isLoading && !isRefreshing ? <ActivityIndicator className="my-4" color="#3b82f6" /> : null}
-        renderItem={renderItem}
+        renderItem={({ item }) =>
+          !item ? renderSkeleton() : renderItem({ item })
+        }
       />
     </View>
   );

@@ -42,7 +42,6 @@ export const getBookedDayByMonth = async (
     createdAt: booking.created_at,
   })) as Booking[];
 };
-
 export const getActivitiesByUserId = async (
   page: number = 0,
   size: number = 10,
@@ -54,24 +53,22 @@ export const getActivitiesByUserId = async (
   const from = page * size;
   const to = from + size - 1;
 
-  const pad = (n: number) => n.toString().padStart(2, "0");
-  const firstDay = `${year}-${pad(month)}-01`;
-  const lastDayDate = new Date(year, month, 0);
-  const lastDay = `${year}-${pad(month)}-${pad(lastDayDate.getDate())}`;
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0, 23, 59, 59);
 
-  const firstDayFull = `${firstDay}T00:00:00`;
-  const lastDayFull = `${lastDay}T23:59:59`;
+  const firstDayFull = start.toISOString();
+  const lastDayFull = end.toISOString();
 
   let query = superbase
     .from("booking")
-    .select(`id, start_date, end_date, created_at, car_id, user_id`, { count: "exact" });
+    .select("id, start_date, end_date, created_at, car_id, user_id", { count: "exact" });
 
   if (roles.length === 0) {
     query = query.eq("user_id", userId);
   }
 
   query = query.or(
-    `and(start_date.gte.${firstDayFull},start_date.lte.${lastDayFull}),and(end_date.gte.${firstDayFull},end_date.lte.${lastDayFull})`,
+    `and(start_date.gte.${firstDayFull},start_date.lte.${lastDayFull}),and(end_date.gte.${firstDayFull},end_date.lte.${lastDayFull})`
   );
 
   const { data, error, count } = await query
@@ -84,15 +81,8 @@ export const getActivitiesByUserId = async (
   }
 
   return {
-    data: (data || []).map((b: any) => ({
-      id: b.id,
-      carId: b.car_id ?? '',
-      userId: b.user_id ?? '',
-      startDate: b.start_date,
-      endDate: b.end_date,
-      createdAt: b.created_at,
-    })) as Booking[],
-    hasNext: count ? to + 1 < count : false,
+    data: (data || []) as unknown as Booking[],
+    hasNext: !!count && to + 1 < count,
   };
 };
 

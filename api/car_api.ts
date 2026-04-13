@@ -1,20 +1,27 @@
 import { superbase } from "@/lib/superbase";
 import { Car, CreateCar } from "@/types/car";
 import { ListResult } from "@/types/listResult";
+import { calcHasNext } from "@/util/pagination";
 
 export const getCars = async (
-  page: number = 0,
-  size: number = 5,
+  page: number,
+  size: number,
 ): Promise<ListResult<Car>> => {
   const from = page * size;
   const to = from + size - 1;
 
-
-  const { data, error, count } = await superbase
+  const {
+    data: cars,
+    error,
+    count,
+  } = await superbase
     .from("car")
-    .select("id,name,imageUrl:image_url,price,carNumber:car_number", {
-      count: "exact",
-    })
+    .select(
+      "id,name,imageUrl:image_url,price,carNumber:car_number,brandId:brand_id",
+      {
+        count: "exact",
+      },
+    )
     .range(from, to)
     .order("created_at", { ascending: false });
 
@@ -23,19 +30,19 @@ export const getCars = async (
     throw new Error(error.message);
   }
 
-  const hasNext = count ? to + 1 < count : false;
+  const hasNext = count ? calcHasNext(page, size, count) : false;
+
+  console.log("Fetched cars:", cars);
 
   const result = {
-    data: data as unknown as Car[],
+    data: cars as unknown as Car[],
     hasNext,
   };
 
   return result;
 };
 
-export const addCar = async (
-  car: CreateCar,
-): Promise<{ data: string | null }> => {
+export const addCar = async (car: CreateCar): Promise<string | null> => {
   const { data, error } = await superbase
     .from("car")
     .insert([
@@ -52,8 +59,8 @@ export const addCar = async (
 
   if (error) {
     console.error("Error adding car brand:", error.message);
-    return { data: null };
+    return null;
   }
 
-  return { data: data.id };
+  return data.id;
 };
